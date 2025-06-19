@@ -278,7 +278,7 @@ for (int i = 0; i < NUM_OPS; i++) {
 return 0;
 }
 
-
+SCREENSHOT FOR THE CODE PROVIDED ABOVE
 ![Screenshot 2025-06-17 220318](https://github.com/user-attachments/assets/6d73b334-3bbf-4a57-a0ff-fecf5fd62d2f)
 s in C++.
 ![Screenshot 2025-06-17 215554](https://github.com/user-attachments/assets/5e3ad459-1c64-4a0d-a80b-e051f12320f2)
