@@ -56,6 +56,229 @@ public:
 - Improve error handling for edge cases.
 Conclusion:
 This project successfully demonstrates the application of object-oriented programming in solving real-world mathematical problems. It focuses on clean modular code and prepares the base for building more advanced mathematical tool
+
+Here are detailed comments for every block of code:
+#include // For input and output
+#include // For mathematical functions like abs()
+// Abstract base class for matrix operations
+class MatrixOp {
+public:
+virtual ~MatrixOp() {} // Virtual destructor
+// Pure virtual function to be implemented by derived classes
+virtual double** execute(double** A, double** B, int r1, int c1, int r2, int c2) = 0;
+};
+// Matrix addition operation class
+class AddMatrixOp : public MatrixOp {
+public:
+double** execute(double** A, double** B, int r1, int c1, int r2, int c2) override {
+// Check for dimension compatibility
+if (r1 != r2 || c1 != c2) {
+std::cerr << "Error: Addition requires same dimensions\n";
+return nullptr;
+}
+    // Allocate result matrix
+    double** result = new double*[r1];
+    for (int i = 0; i < r1; i++) {
+        result[i] = new double[c1];
+        for (int j = 0; j < c1; j++) {
+            // Add corresponding elements using pointer arithmetic
+            *(*(result + i) + j) = *(*(A + i) + j) + *(*(B + i) + j);
+        }
+    }
+    return result; // Return sum
+}
+};
+// Matrix multiplication operation class
+class MulMatrixOp : public MatrixOp {
+public:
+double** execute(double** A, double** B, int r1, int c1, int r2, int c2) override {
+// Check for dimension compatibility
+if (c1 != r2) {
+std::cerr << "Error: Multiplication dimension mismatch\n";
+return nullptr;
+}
+    // Allocate result matrix
+    double** result = new double*[r1];
+    for (int i = 0; i < r1; i++) {
+        result[i] = new double[c2]{0}; // Initialize each element to 0
+
+        for (int j = 0; j < c2; j++) {
+            for (int k = 0; k < c1; k++) {
+                // Multiply and accumulate products using pointer arithmetic
+                *(*(result + i) + j) += *(*(A + i) + k) * *(*(B + k) + j);
+            }
+        }
+    }
+    return result; // Return product
+}
+};
+// Matrix inversion operation class
+class InverseMatrixOp : public MatrixOp {
+public:
+double** execute(double** A, double** B, int r1, int c1, int r2, int c2) override {
+if (r1 != c1) { // Check for square matrix
+std::cerr << "Error: Inverse requires square matrix\n";
+return nullptr;
+}
+int n = r1;
+    // Create augmented matrix [A|I]
+    double** aug = new double*[n];
+    for (int i = 0; i < n; i++) {
+        aug[i] = new double[2 * n];
+        for (int j = 0; j < n; j++) {
+            *(*(aug + i) + j) = *(*(A + i) + j); // Copy A
+        }
+        for (int j = n; j < 2 * n; j++) {
+            *(*(aug + i) + j) = (j - n == i) ? 1.0 : 0.0; // Identity matrix
+        }
+    }
+
+    // Apply Gauss-Jordan elimination
+    for (int i = 0; i < n; i++) {
+        // Partial pivoting
+        double maxVal = std::abs(*(*(aug + i) + i));
+        int maxRow = i;
+        for (int k = i + 1; k < n; k++) {
+            if (std::abs(*(*(aug + k) + i)) > maxVal) {
+                maxVal = std::abs(*(*(aug + k) + i));
+                maxRow = k;
+            }
+        }
+        if (maxRow != i) {
+            std::swap(aug[i], aug[maxRow]); // Swap rows
+        }
+
+        double pivot = *(*(aug + i) + i);
+        if (std::abs(pivot) < 1e-9) {
+            std::cerr << "Error: Matrix is singular\n";
+            for (int j = 0; j < n; j++) delete[] aug[j];
+            delete[] aug;
+            return nullptr;
+        }
+
+        // Normalize pivot row
+        for (int j = 0; j < 2 * n; j++) {
+            *(*(aug + i) + j) /= pivot;
+        }
+
+        // Eliminate other rows
+        for (int k = 0; k < n; k++) {
+            if (k == i) continue;
+            double factor = *(*(aug + k) + i);
+            for (int j = 0; j < 2 * n; j++) {
+                *(*(aug + k) + j) -= factor * *(*(aug + i) + j);
+            }
+        }
+    }
+
+    // Extract inverse matrix from augmented matrix
+    double** inv = new double*[n];
+    for (int i = 0; i < n; i++) {
+        inv[i] = new double[n];
+        for (int j = 0; j < n; j++) {
+            *(*(inv + i) + j) = *(*(aug + i) + j + n);
+        }
+    }
+
+    // Cleanup augmented matrix
+    for (int i = 0; i < n; i++) delete[] aug[i];
+    delete[] aug;
+
+    return inv; // Return inverse matrix
+}
+};
+// Allocate a dynamic matrix
+double** allocateMatrix(int rows, int cols) {
+double** matrix = new double*[rows];
+for (int i = 0; i < rows; i++) {
+matrix[i] = new double[cols];
+}
+return matrix;
+}
+// Free a dynamically allocated matrix
+void freeMatrix(double** matrix, int rows) {
+for (int i = 0; i < rows; i++) {
+delete[] matrix[i];
+}
+delete[] matrix;
+}
+// Print a matrix
+void printMatrix(double** matrix, int rows, int cols) {
+for (int i = 0; i < rows; i++) {
+for (int j = 0; j < cols; j++) {
+std::cout << ((matrix + i) + j) << " "; // Print element
+}
+std::cout << "\n";
+}
+}
+int main() {
+int r1, c1, r2, c2;
+// Input dimensions and elements for matrix A
+std::cout << "Enter dimensions for matrix A (rows columns): ";
+std::cin >> r1 >> c1;
+double** A = allocateMatrix(r1, c1);
+std::cout << "Enter elements for matrix A:\n";
+for (int i = 0; i < r1; i++) {
+    for (int j = 0; j < c1; j++) {
+        std::cin >> *(*(A + i) + j);
+    }
+}
+
+// Input dimensions and elements for matrix B
+std::cout << "Enter dimensions for matrix B (rows columns): ";
+std::cin >> r2 >> c2;
+double** B = allocateMatrix(r2, c2);
+std::cout << "Enter elements for matrix B:\n";
+for (int i = 0; i < r2; i++) {
+    for (int j = 0; j < c2; j++) {
+        std::cin >> *(*(B + i) + j);
+    }
+}
+
+// Create operation objects using polymorphism
+const int NUM_OPS = 3;
+MatrixOp* ops[NUM_OPS] = {
+    new AddMatrixOp(),
+    new MulMatrixOp(),
+    new InverseMatrixOp()
+};
+
+// Execute each operation and print results
+for (int i = 0; i < NUM_OPS; i++) {
+    std::cout << "\nOperation " << i+1 << ":\n";
+    double** result = ops[i]->execute(A, B, r1, c1, r2, c2);
+
+    if (result) {
+        int res_rows, res_cols;
+
+        // Set result dimensions based on operation type
+        if (dynamic_cast<AddMatrixOp*>(ops[i])) {
+            res_rows = r1;
+            res_cols = c1;
+        } else if (dynamic_cast<MulMatrixOp*>(ops[i])) {
+            res_rows = r1;
+            res_cols = c2;
+        } else {
+            res_rows = r1;
+            res_cols = r1; // Square matrix for inverse
+        }
+
+        printMatrix(result, res_rows, res_cols); // Display result
+        freeMatrix(result, res_rows); // Free result memory
+    }
+}
+
+// Cleanup original matrices and operations
+freeMatrix(A, r1);
+freeMatrix(B, r2);
+for (int i = 0; i < NUM_OPS; i++) {
+    delete ops[i];
+}
+
+return 0;
+}
+
+
 ![Screenshot 2025-06-17 220318](https://github.com/user-attachments/assets/6d73b334-3bbf-4a57-a0ff-fecf5fd62d2f)
 s in C++.
 ![Screenshot 2025-06-17 215554](https://github.com/user-attachments/assets/5e3ad459-1c64-4a0d-a80b-e051f12320f2)
